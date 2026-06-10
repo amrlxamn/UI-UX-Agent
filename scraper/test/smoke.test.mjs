@@ -130,3 +130,16 @@ test('fingerprint output has the schema-1 contract shape', async () => {
   assert.ok(Array.isArray(fp.grid.columns));
   assert.ok(typeof fp.grid.columns[0] === 'number');
 });
+
+test('extractor expands 3-digit shorthand hex to 6-digit', async () => {
+  const html = '<style>body { color: #fff; background: #000; } .accent { color: #f0a; }</style><header>hi</header>';
+  const fp = await extractFingerprint({ html, sourceUrl: 'test://shorthand' });
+  const hexes = new Set(fp.palette.map((p) => p.hex));
+  assert.ok(hexes.has('#ffffff'), `expected #ffffff from #fff, got: ${[...hexes].join(',')}`);
+  assert.ok(hexes.has('#000000'), `expected #000000 from #000, got: ${[...hexes].join(',')}`);
+  assert.ok(hexes.has('#ff00aa'), `expected #ff00aa from #f0a, got: ${[...hexes].join(',')}`);
+  // All hex values must match the 6-digit schema pattern
+  for (const p of fp.palette) {
+    assert.match(p.hex, /^#[0-9a-f]{6}$/i, `hex should be 6-digit: ${p.hex}`);
+  }
+});
