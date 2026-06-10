@@ -1,0 +1,151 @@
+{
+  "name": "uiux-p1-modeB",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uiux-p1-modeb",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "trigger",
+      "name": "Chat Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "uiux-p1-modeb"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst mode = body.mode || 'B';\nconst brief = String(body.brief || '').trim();\nconst targetStack = body.targetStack || 'react-vite';\nconst referenceUrl = body.referenceUrl || null;\nif (!brief) throw new Error('brief is required');\nreturn [{ json: { mode, brief, targetStack, referenceUrl } }];"
+      },
+      "id": "parse",
+      "name": "Parse input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true},
+          "combinator": "or",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.referenceUrl }}",
+              "rightValue": "",
+              "operator": {"type": "string", "operation": "notEmpty"}
+            }
+          ]
+        }
+      },
+      "id": "hasref",
+      "name": "Has reference?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SCRAPER_URL }}/scrape",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "content-type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": {{ JSON.stringify($json.referenceUrl) }}\n}",
+        "options": {"timeout": 30000}
+      },
+      "id": "scrape",
+      "name": "Scrape reference",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SCRAPER_URL }}/scrape/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "content-type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": {{ JSON.stringify($json.brief) }},\n  \"limit\": 1\n}",
+        "options": {"timeout": 15000}
+      },
+      "id": "search",
+      "name": "Search awwwards (stub)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "// P1: build a 1-reference baseline by hand-rolling the merge.\n// P2 replaces this with `node scripts/build-baseline.mjs`.\nconst hasRef = Boolean($('parse').item.json.referenceUrl);\nconst scrapeItem = $('Scrape reference').first().json || {};\nconst fp = scrapeItem.fingerprint || null;\nif (!fp) {\n  throw new Error('P1 requires a referenceUrl; search-only path is P2');\n}\nconst baseline = {\n  version: 1,\n  createdAt: new Date().toISOString(),\n  sourceFingerprints: [fp.sourceUrl],\n  palette: fp.palette.map(p => p.hex),\n  fonts: fp.fonts.map(f => f.family),\n  motion: fp.motion,\n  components: fp.components,\n};\nreturn [{ json: { baseline, fingerprint: fp, brief: $('parse').item.json.brief, targetStack: $('parse').item.json.targetStack } }];"
+      },
+      "id": "baseline",
+      "name": "Build baseline",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.OLLAMA_API_KEY ? $env.OLLAMA_CLOUD_BASE_URL : $env.OLLAMA_LOCAL_BASE_URL }}/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "content-type", "value": "application/json"},
+            {"name": "authorization", "value": "=Bearer {{ $env.OLLAMA_API_KEY || 'ollama' }}"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL_CODER }}\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You generate a single-file React + Vite landing page that approximates the reference's design language. Use only the colors, fonts, and components in the baseline. Output JSON: { files: [{ path, content }], notes }. No markdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify({ brief: $json.brief, baseline: $json.baseline, targetStack: $json.targetStack }) }}\n    }\n  ],\n  \"temperature\": 0.4\n}",
+        "options": {"timeout": 90000}
+      },
+      "id": "gen",
+      "name": "Generate (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = $('Generate (Ollama)').first().json;\nconst txt = out.choices?.[0]?.message?.content || '';\nlet parsed = null;\ntry { parsed = JSON.parse(txt); } catch {}\nreturn [{ json: { ok: Boolean(parsed), files: parsed?.files || [], notes: parsed?.notes || '', raw: txt, baseline: $('Build baseline').item.json.baseline, fingerprint: $('Build baseline').item.json.fingerprint } }];"
+      },
+      "id": "shape",
+      "name": "Shape output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1640, 300]
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {"main": [[{"node": "Parse input", "type": "main", "index": 0}]]},
+    "Parse input": {"main": [[{"node": "Has reference?", "type": "main", "index": 0}]]},
+    "Has reference?": {"main": [[{"node": "Scrape reference", "type": "main", "index": 0}], [{"node": "Search awwwards (stub)", "type": "main", "index": 0}]]},
+    "Scrape reference": {"main": [[{"node": "Build baseline", "type": "main", "index": 0}]]},
+    "Build baseline": {"main": [[{"node": "Generate (Ollama)", "type": "main", "index": 0}]]},
+    "Generate (Ollama)": {"main": [[{"node": "Shape output", "type": "main", "index": 0}]]}
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {"name": "ui-ux"},
+    {"name": "p1"}
+  ],
+  "active": false,
+  "versionId": "1"
+}

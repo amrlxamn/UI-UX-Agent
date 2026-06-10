@@ -1,0 +1,16 @@
+# runtime
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+
+# docker
+scraper_data/
+playwright_cache/
+n8n_data/
+
+# build artifacts
+dist/
+build/
+.tmp-home/

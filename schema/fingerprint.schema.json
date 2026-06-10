@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/ui-ux-agent/fingerprint.schema.json",
+  "title": "DesignFingerprint",
+  "description": "Compact design fingerprint extracted from a single reference site. P1 contract shared with the critic and the generator.",
+  "type": "object",
+  "required": [
+    "sourceUrl",
+    "palette",
+    "fonts",
+    "radius",
+    "motion",
+    "grid",
+    "components",
+    "extractedAt",
+    "schemaVersion"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "sourceUrl": { "type": ["string", "null"] },
+    "schemaVersion": { "const": 1 },
+    "extractedAt": { "type": "string", "format": "date-time" },
+    "palette": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["hex", "count"],
+        "additionalProperties": false,
+        "properties": {
+          "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["family", "count"],
+        "additionalProperties": false,
+        "properties": {
+          "family": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "radius": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "motion": {
+      "type": "object",
+      "required": ["durations", "easings"],
+      "additionalProperties": false,
+      "properties": {
+        "durations": {
+          "type": "array",
+          "items": { "type": "integer", "enum": [150, 250, 400, 700] }
+        },
+        "easings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["columns"],
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "header", "nav", "main", "section", "article", "aside", "footer",
+          "form", "hero", "marquee", "carousel", "modal", "video", "three"
+        ]
+      }
+    }
+  }
+}

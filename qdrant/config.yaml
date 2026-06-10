@@ -1,0 +1,33 @@
+# Qdrant P1 config. Tuned for Colima 2GB VMs.
+# - HNSW index disabled by default: payloads only, no vector
+#   search. P1 doesn't need vector search (no embeddings yet);
+#   we flip this on in P2 when we add the CLIP/embedder pipeline.
+# - Single-segment storage: simpler memory profile, slower
+#   compaction; fine for P1.
+# - Conservative service limits.
+
+service:
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+  enable_cors: true
+  max_request_size_mb: 8
+  max_concurrent_searches: 8
+
+storage:
+  storage_path: /qdrant/storage
+  snapshots_path: /qdrant/snapshots
+  # HNSW off for P1; we add it in P2 with embeddings.
+  hnsw_index:
+    on_disk: false
+  # Single segment to keep the in-memory footprint small.
+  optimizers:
+    default_segment_number: 1
+    indexing_threshold_kb: 0
+    flush_interval_sec: 30
+    max_optimization_threads: 1
+
+log_level: INFO
+
+# Tighter resource ceilings. The host mem_limit in compose
+# (1g) is the outer cap; these are the qdrant-side estimates.

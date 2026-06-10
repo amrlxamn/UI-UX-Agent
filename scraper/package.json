@@ -1,0 +1,20 @@
+{
+  "name": "ui-ux-agent-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/serve.js",
+    "smoke": "node --test test/",
+    "extract:fixture": "node src/extract.js fixtures/awwwards-1.html"
+  },
+  "dependencies": {
+    "css-tree": "^2.3.1",
+    "fastify": "^4.28.1",
+    "jsdom": "^25.0.0",
+    "playwright": "^1.49.0"
+  }
+}

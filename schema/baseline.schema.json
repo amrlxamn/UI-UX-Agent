@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/ui-ux-agent/baseline.schema.json",
+  "title": "DesignBaseline",
+  "description": "Aggregated baseline over 1..N fingerprints. P1 uses 1; P2 merges 3.",
+  "type": "object",
+  "required": [
+    "version",
+    "sourceFingerprints",
+    "palette",
+    "fonts",
+    "motion",
+    "components",
+    "createdAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "sourceFingerprints": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "palette": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+    },
+    "fonts": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "motion": {
+      "type": "object",
+      "required": ["durations", "easings"],
+      "additionalProperties": false,
+      "properties": {
+        "durations": { "type": "array", "items": { "type": "integer" } },
+        "easings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Studio Null Berlin</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --paper: #f4f1ea;
+    --accent: #ff5b3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Söhne", "Inter", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    padding: 96px 64px;
+    min-height: 100vh;
+    align-items: center;
+  }
+  .hero h1 {
+    font-family: "Tiempos Headline", serif;
+    font-size: clamp(56px, 9vw, 144px);
+    letter-spacing: -0.04em;
+  }
+  .marquee {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 24px 0;
+  }
+  .marquee-track {
+    display: inline-block;
+    white-space: nowrap;
+    animation: slide 28s linear infinite;
+  }
+  @keyframes slide {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .card {
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+    padding: 24px;
+    transition: transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .card:hover { transform: translateY(-4px); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: background 200ms ease-out;
+  }
+  .btn:hover { background: var(--accent); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    padding: 64px;
+  }
+  video { width: 100%; border-radius: 8px; }
+  .footer {
+    padding: 48px 64px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <span>Studio · Berlin</span>
+    <h1>We make brands feel like the future.</h1>
+    <a class="btn" href="#work">See work →</a>
+  </header>
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      Brand systems · Motion design · 3D direction · Brand systems · Motion design · 3D direction ·
+    </div>
+  </div>
+  <main class="grid">
+    <article class="card" style="grid-column: span 6;">
+      <video autoplay muted loop playsinline></video>
+      <h2>Project North</h2>
+      <p>Identity and motion system for a Norwegian sailing brand.</p>
+    </article>
+    <article class="card" style="grid-column: span 6;">
+      <h2>Project Halo</h2>
+      <p>A 3D product launch built in three.js with custom shaders.</p>
+    </article>
+  </main>
+  <footer class="footer">© Studio Null — Berlin, 2026</footer>
+</body>
+</html>

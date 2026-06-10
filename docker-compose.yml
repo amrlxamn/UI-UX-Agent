@@ -1,0 +1,149 @@
+# P1 compose: n8n + scraper + postgres + qdrant + generator-sandbox
+# Networking: a single user-defined bridge. n8n reaches the scraper on
+# http://scraper:3000. The scraper reaches awwwards through the host.
+#
+# Ollama is NOT a service here. We use host.docker.internal so the
+# containers can hit the Ollama daemon already running on the host
+# (cloud when OLLAMA_API_KEY is set, local when it's blank).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - uiux_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    # v1.10.1 is the last 1.x with both:
+    #   * a native aarch64 binary (works on Colima M-series)
+    #   * a default HNSW config that fits in 2GB RAM on first boot
+    # v1.11+ builds larger in-memory indexes and OOM-kills on 2GB.
+    image: qdrant/qdrant:v1.10.1
+    restart: on-failure
+    mem_limit: 1g
+    mem_reservation: 512m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - uiux_qdrant:/qdrant/storage
+      - ./qdrant/config.yaml:/qdrant/config/config.yaml:ro
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: "6334"
+      QDRANT__LOG_LEVEL: "INFO"
+    healthcheck:
+      disable: true
+    # NOTE: a healthcheck is left disabled in P1 because qdrant's
+    # 6333 server can take >60s to bind on cold-start on Colima
+    # with virtiofs, and an aggressive probe was making the
+    # container report Error instead of a clean restart loop. The
+    # workflow itself uses an HTTP retry before treating qdrant as
+    # up; see docs/runbook.md for the curl-based readiness check.
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${SCRAPER_PORT:-3000}:3000"
+    environment:
+      SCRAPER_PORT: 3000
+      SCRAPER_LOG_LEVEL: ${SCRAPER_LOG_LEVEL:-info}
+      AWWARDS_BASE_URL: ${AWWARDS_BASE_URL}
+      AWWARDS_USER_AGENT: ${AWWARDS_USER_AGENT}
+      AWWARDS_REQUEST_TIMEOUT_MS: ${AWWARDS_REQUEST_TIMEOUT_MS}
+      AWWARDS_RATE_LIMIT_PER_SEC: ${AWWARDS_RATE_LIMIT_PER_SEC}
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - scraper_data:/data
+      - playwright_cache:/ms-playwright
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e 'require("http").get("http://localhost:3000/healthz",r=>process.exit(r.statusCode===200?0:1)).on("error",()=>process.exit(1))'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  sandbox:
+    image: ${SANDBOX_BASE_IMAGE:-node:20-alpine}
+    restart: "no"
+    # P1 does NOT run the generator inside a long-lived container;
+    # the n8n workflow shells out to a one-shot `docker run` via
+    # the host's docker socket. This service is a placeholder so
+    # the image is pre-pulled.
+    command: ["sh", "-c", "echo sandbox-image-ready"]
+    volumes: []
+
+  n8n:
+    image: n8nio/n8n:1.112.6
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_DIAGNOSTICS_ENABLED: ${N8N_DIAGNOSTICS_ENABLED}
+      N8N_CHAT_WORKSPACE_ID: ${N8N_CHAT_WORKSPACE_ID}
+      N8N_CHAT_WEBHOOK_SECRET: ${N8N_CHAT_WEBHOOK_SECRET}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: ${N8N_BLOCK_ENV_ACCESS_IN_NODE}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
+      TZ: ${TZ}
+      # Custom env for the n8n workflow to read
+      SCRAPER_URL: http://scraper:3000
+      QDRANT_URL: http://qdrant:6333
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY}
+      OLLAMA_CLOUD_BASE_URL: ${OLLAMA_CLOUD_BASE_URL}
+      OLLAMA_LOCAL_BASE_URL: ${OLLAMA_LOCAL_BASE_URL}
+      OLLAMA_MODEL_PLANNER: ${OLLAMA_MODEL_PLANNER}
+      OLLAMA_MODEL_CODER: ${OLLAMA_MODEL_CODER}
+      OLLAMA_MODEL_CRITIC: ${OLLAMA_MODEL_CRITIC}
+      OLLAMA_MODEL_FAST: ${OLLAMA_MODEL_FAST}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/.n8n/workflows:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scraper:
+        condition: service_healthy
+      # qdrant: service_started, not service_healthy. P1 does not
+      # write to qdrant from the workflow, so n8n should not be
+      # blocked by a slow qdrant cold-start. QDRANT_URL is exposed
+      # as an env var so the workflow can opt in to it later.
+      qdrant:
+        condition: service_started
+
+volumes:
+  uiux_postgres:
+  uiux_qdrant:
+  scraper_data:
+  playwright_cache:
+  n8n_data:
