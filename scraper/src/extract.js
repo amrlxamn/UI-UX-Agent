@@ -56,8 +56,22 @@ function extractColors(cssText) {
   const re = /#([0-9a-fA-F]{3,8})\b|rgba?\(\s*[\d.,\s%]+\)/g;
   while ((m = re.exec(cssText)) !== null) {
     const raw = m[0];
-    const hex = raw.startsWith('#') ? `#${raw.slice(1).toLowerCase()}` : rgbToHex(raw);
+    let hex;
+    if (raw.startsWith('#')) {
+      const digits = raw.slice(1).toLowerCase();
+      // Expand shorthand: #fff -> #ffffff, #fff0 -> #ffffff00
+      if (digits.length === 3) {
+        hex = `#${digits[0]}${digits[0]}${digits[1]}${digits[1]}${digits[2]}${digits[2]}`;
+      } else if (digits.length === 4) {
+        hex = `#${digits[0]}${digits[0]}${digits[1]}${digits[1]}${digits[2]}${digits[2]}${digits[3]}${digits[3]}`;
+      } else {
+        hex = `#${digits}`;
+      }
+    } else {
+      hex = rgbToHex(raw);
+    }
     if (!hex) continue;
+    // Normalize 8- and 4-digit (with alpha) to 6-digit by dropping alpha
     const normalized = hex.length === 9 ? hex.slice(0, 7) : hex;
     colors.set(normalized, (colors.get(normalized) || 0) + 1);
   }
