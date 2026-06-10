@@ -1,0 +1,20 @@
+{
+  "name": "ui-ux-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "uiux": "./bin/uiux.mjs"
+  },
+  "scripts": {
+    "smoke": "node --test scraper/test/smoke.test.mjs",
+    "smoke:cli": "node --test test/cli.test.mjs",
+    "test": "node --test scraper/test/smoke.test.mjs && node --test test/cli.test.mjs",
+    "generate": "node bin/uiux.mjs",
+    "scraper": "node scraper/src/serve.js"
+  },
+  "dependencies": {}
+}
