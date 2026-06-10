@@ -15,6 +15,5 @@
     "test": "node --test scraper/test/smoke.test.mjs && node --test test/cli.test.mjs",
     "generate": "node bin/uiux.mjs",
     "scraper": "node scraper/src/serve.js"
-  },
-  "dependencies": {}
+  }
 }
