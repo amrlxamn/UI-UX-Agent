@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local/ui-ux-agent/reference-intelligence.schema.json",
+  "title": "ReferenceIntelligence",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "library",
+    "platform",
+    "source",
+    "identity",
+    "analysis",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "library": { "enum": ["trend", "excellence", "rejection"] },
+    "platform": { "enum": ["framer", "webflow", "custom", "unknown"] },
+    "source": {
+      "type": "object",
+      "required": ["url", "capturedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^(?:[Ff][Ii][Ll][Ee]://(?:[^/?#@]+(?:[/?#]|$)|/[^/])|[A-Za-z][A-Za-z0-9+.-]*://[^/?#@]+(?:[/?#]|$)|(?![Hh][Tt][Tt][Pp][Ss]?:)[A-Za-z][A-Za-z0-9+.-]*:(?!//))"
+            }
+          ]
+        },
+        "capturedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "identity": { "$ref": "#/$defs/identity" },
+    "analysis": { "$ref": "#/$defs/analysis" },
+    "evidence": {
+      "type": "object",
+      "required": ["fingerprint", "screenshots", "motionTraces", "videos", "sourceMaterials"],
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": {
+          "allOf": [
+            { "$ref": "fingerprint.schema.json" },
+            {
+              "type": "object",
+              "properties": {
+                "sourceUrl": {
+                  "oneOf": [
+                    { "type": "null" },
+                    {
+                      "type": "string",
+                      "format": "uri",
+                      "pattern": "^(?:[Ff][Ii][Ll][Ee]://(?:[^/?#@]+(?:[/?#]|$)|/[^/])|[A-Za-z][A-Za-z0-9+.-]*://[^/?#@]+(?:[/?#]|$)|(?![Hh][Tt][Tt][Pp][Ss]?:)[A-Za-z][A-Za-z0-9+.-]*:(?!//))"
+                    }
+                  ]
+                },
+                "extractedAt": { "type": "string", "format": "date-time" }
+              }
+            }
+          ]
+        },
+        "screenshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["uri", "width", "height", "capturedAt"],
+            "additionalProperties": false,
+            "properties": {
+              "uri": { "$ref": "#/$defs/artifactLocator" },
+              "width": { "type": "integer", "minimum": 1 },
+              "height": { "type": "integer", "minimum": 1 },
+              "capturedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "motionTraces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["uri", "format", "capturedAt"],
+            "additionalProperties": false,
+            "properties": {
+              "uri": { "$ref": "#/$defs/artifactLocator" },
+              "format": { "enum": ["json", "video"] },
+              "capturedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "videos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["uri", "capturedAt"],
+            "additionalProperties": false,
+            "properties": {
+              "uri": { "$ref": "#/$defs/artifactLocator" },
+              "capturedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "sourceMaterials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "url", "title"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": [
+                  "official-doc",
+                  "template",
+                  "walkthrough",
+                  "case-study",
+                  "award-listing",
+                  "published-site",
+                  "other"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^/?#@]+(?:[/?#]|$)"
+              },
+              "title": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "artifactLocator": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^(?:[Hh][Tt][Tt][Pp][Ss]?://[^/?#@]+(?:[/?#]|$)|[Ff][Ii][Ll][Ee]://(?:[^/?#@]+(?:[/?#]|$)|/[^/]))"
+        },
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*(?:/[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*)+$"
+        }
+      ]
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "creator": { "type": "string" },
+        "studio": { "type": "string" },
+        "industry": { "type": "string" },
+        "siteType": { "type": "string" },
+        "publishedAt": { "type": "string", "format": "date" },
+        "dates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "type": "string" },
+              "value": { "type": "string", "format": "date" }
+            }
+          }
+        },
+        "recognition": { "$ref": "#/$defs/stringArray" },
+        "sourceUrls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]?://[^/?#@]+(?:[/?#]|$)"
+          }
+        }
+      }
+    },
+    "design": {
+      "type": "object",
+      "required": [
+        "concept",
+        "emotionalObjective",
+        "visualLanguage",
+        "typography",
+        "composition",
+        "colorRoles",
+        "imagery",
+        "material",
+        "responsiveStrategy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "concept": { "$ref": "#/$defs/stringArray" },
+        "emotionalObjective": { "$ref": "#/$defs/stringArray" },
+        "visualLanguage": { "$ref": "#/$defs/stringArray" },
+        "typography": { "$ref": "#/$defs/stringArray" },
+        "composition": { "$ref": "#/$defs/stringArray" },
+        "colorRoles": { "$ref": "#/$defs/stringArray" },
+        "imagery": { "$ref": "#/$defs/stringArray" },
+        "material": { "$ref": "#/$defs/stringArray" },
+        "responsiveStrategy": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "motionPattern": {
+      "type": "object",
+      "required": [
+        "name",
+        "trigger",
+        "target",
+        "properties",
+        "timing",
+        "easing",
+        "sequence",
+        "purpose",
+        "mobileAdaptation",
+        "reducedMotionBehavior"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "trigger": { "type": "string" },
+        "target": { "type": "string" },
+        "properties": { "$ref": "#/$defs/stringArray" },
+        "timing": { "type": "string" },
+        "easing": { "type": "string" },
+        "sequence": { "$ref": "#/$defs/stringArray" },
+        "purpose": { "type": "string" },
+        "mobileAdaptation": { "type": "string" },
+        "reducedMotionBehavior": { "type": "string" }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "required": ["patterns"],
+      "additionalProperties": false,
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/motionPattern" }
+        }
+      }
+    },
+    "taste": {
+      "type": "object",
+      "required": [
+        "baselinePatterns",
+        "avoidedOverusedPatterns",
+        "followedRules",
+        "brokenRules",
+        "originalContribution",
+        "strongestDecision",
+        "weakestDecision",
+        "awwwardsDelta",
+        "reusablePrinciples",
+        "copyingRisks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "baselinePatterns": { "$ref": "#/$defs/stringArray" },
+        "avoidedOverusedPatterns": { "$ref": "#/$defs/stringArray" },
+        "followedRules": { "$ref": "#/$defs/stringArray" },
+        "brokenRules": { "$ref": "#/$defs/stringArray" },
+        "originalContribution": { "$ref": "#/$defs/stringArray" },
+        "strongestDecision": { "$ref": "#/$defs/stringArray" },
+        "weakestDecision": { "$ref": "#/$defs/stringArray" },
+        "awwwardsDelta": { "$ref": "#/$defs/stringArray" },
+        "reusablePrinciples": { "$ref": "#/$defs/stringArray" },
+        "copyingRisks": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "quality": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "unrated" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["status", "dimensions"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "rated" },
+            "dimensions": {
+              "type": "object",
+              "required": [
+                "concept",
+                "originality",
+                "artDirection",
+                "typography",
+                "composition",
+                "color",
+                "imagery",
+                "motion",
+                "interaction",
+                "technicalExecution",
+                "usability",
+                "accessibility",
+                "responsiveness",
+                "performance"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "concept": { "type": "number", "minimum": 0, "maximum": 100 },
+                "originality": { "type": "number", "minimum": 0, "maximum": 100 },
+                "artDirection": { "type": "number", "minimum": 0, "maximum": 100 },
+                "typography": { "type": "number", "minimum": 0, "maximum": 100 },
+                "composition": { "type": "number", "minimum": 0, "maximum": 100 },
+                "color": { "type": "number", "minimum": 0, "maximum": 100 },
+                "imagery": { "type": "number", "minimum": 0, "maximum": 100 },
+                "motion": { "type": "number", "minimum": 0, "maximum": 100 },
+                "interaction": { "type": "number", "minimum": 0, "maximum": 100 },
+                "technicalExecution": { "type": "number", "minimum": 0, "maximum": 100 },
+                "usability": { "type": "number", "minimum": 0, "maximum": 100 },
+                "accessibility": { "type": "number", "minimum": 0, "maximum": 100 },
+                "responsiveness": { "type": "number", "minimum": 0, "maximum": 100 },
+                "performance": { "type": "number", "minimum": 0, "maximum": 100 }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["status", "design", "motion", "taste", "quality"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["pending", "complete"] },
+        "design": { "$ref": "#/$defs/design" },
+        "motion": { "$ref": "#/$defs/motion" },
+        "taste": { "$ref": "#/$defs/taste" },
+        "quality": { "$ref": "#/$defs/quality" }
+      }
+    }
+  }
+}
