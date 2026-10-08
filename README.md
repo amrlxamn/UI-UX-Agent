@@ -21,7 +21,7 @@ ui-ux-agent/
     test/          # node --test smoke tests
   n8n/
     workflows/     # exported n8n workflow JSON (v0.1)
-  schema/          # fingerprint + baseline JSON Schemas
+  schema/          # fingerprint, baseline, and reference-intelligence JSON Schemas
   scripts/         # helper scripts (offline smoke, ollama probe)
   docs/            # runbook, decisions, P1 acceptance gate
   .env.example
@@ -57,11 +57,20 @@ curl -fsS http://localhost:3000/healthz
 # Trigger via the chat webhook.
 ```
 
-## Offline smoke test (works in this sandbox)
+## Reference Intelligence v2 foundation
+
+`schema/reference-intelligence.schema.json` defines records for three separate reference libraries:
+
+- `trend`: contemporary Framer, Webflow, and comparable production work
+- `excellence`: deeply analyzed award-level work and its Awwwards delta
+- `rejection`: generic, unsuccessful, or deliberately rejected patterns
+
+`scraper/src/reference-intelligence.js` creates and validates deterministic records while preserving the complete schema-v1 fingerprint. Records support identity, design, motion, taste, canonical quality dimensions, screenshots, motion traces, videos, and source-material provenance. Collection and AI analysis are not part of this foundation.
+
+## Offline test suite
 
 ```bash
-node --test scraper/test/smoke.test.mjs
+npm test
 ```
 
-This runs the extractor end-to-end against a deterministic HTML fixture.
-No Docker, no Ollama, no network.
+This runs the extractor, Reference Intelligence, pipeline, and Ollama-client tests against deterministic fixtures. No Docker, Ollama, or network access is required.

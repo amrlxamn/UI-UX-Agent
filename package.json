@@ -10,9 +10,9 @@
     "uiux": "./bin/uiux.mjs"
   },
   "scripts": {
-    "smoke": "node --test scraper/test/smoke.test.mjs",
+    "smoke": "node --test scraper/test/",
     "smoke:cli": "node --test test/cli.test.mjs",
-    "test": "node --test scraper/test/smoke.test.mjs && node --test test/cli.test.mjs",
+    "test": "npm run smoke && node --test test/cli.test.mjs",
     "generate": "node bin/uiux.mjs",
     "scraper": "node scraper/src/serve.js"
   }
